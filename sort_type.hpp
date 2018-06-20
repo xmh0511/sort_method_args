@@ -5,7 +5,6 @@
 #ifndef UNTITLED42_SORT_TYPE_HPP
 #define UNTITLED42_SORT_TYPE_HPP
 #include <tuple>
-using namespace std;
 struct void_type
 {
     using element_type = void_type;
@@ -40,12 +39,12 @@ struct is_void_type<void_type>
     static const bool value = true;
 };
 template<int N,typename U,typename T,typename Tuple>
-typename std::enable_if<!is_void_type<T>::value,T>::type get_index_value(Tuple tup)
+typename std::enable_if<!is_void_type<T>::value,T>::type get_index_value(Tuple&& tup)
 {
     return std::get<N>(tup);
 };
 template<int N,typename U,typename T,typename Tuple>
-typename std::enable_if<is_void_type<T>::value,U>::type get_index_value(Tuple tup)
+typename std::enable_if<is_void_type<T>::value,U>::type get_index_value(Tuple&& tup)
 {
     return U{};
 };
@@ -70,7 +69,7 @@ struct reduce_tuple<0>
     using type = std::tuple<void_type>;
 };
 template<typename Tuple,typename...Args,typename...Arg2s>
-auto sort_args(Tuple correct_tup,std::tuple<Args...>,std::tuple<Arg2s...> real_params)
+auto sort_args(Tuple&& correct_tup,std::tuple<Args...>&&,std::tuple<Arg2s...>&& real_params)
 {
     using T = typename std::tuple_element<0,std::tuple<Args...>>::type;
     constexpr int index = Find_Type<0,T,Arg2s...>::type::element_index;
@@ -79,10 +78,10 @@ auto sort_args(Tuple correct_tup,std::tuple<Args...>,std::tuple<Arg2s...> real_p
     auto result = get_index_value<index,T,element_type>(real_params);
     auto new_tuple = std::tuple_cat(correct_tup,std::tuple<decltype(result)>(result));
     using now_sort_tuple_type = typename reduce_tuple<1,Args...>::type ;
-    return sort_args(new_tuple,now_sort_tuple_type{},real_params);
+    return sort_args(new_tuple,now_sort_tuple_type{},std::forward<std::tuple<Arg2s...>>(real_params));
 };
 template<typename Tuple,typename...Args>
-auto sort_args(Tuple correct_tup,std::tuple<void_type>,std::tuple<Args...> real_params)
+auto sort_args(Tuple&& correct_tup,std::tuple<void_type>&&,std::tuple<Args...>&& real_params)
 {
     return correct_tup;
 };
@@ -98,9 +97,9 @@ struct each_tuple
     }
 };
 template<typename...Args,typename...Arg2s>
-auto sort_args_help(std::tuple<Args...>,std::tuple<Arg2s...> real_params)
+auto sort_args_help(std::tuple<Args...>&& order_params,std::tuple<Arg2s...>&& real_params)
 {
-    return sort_args(std::tuple<>(),std::tuple<Args...>{},real_params);
+    return sort_args(std::tuple<>(),std::forward<std::tuple<Args...>>(order_params),std::forward<std::tuple<Arg2s...>>(real_params));
 }
 template<int N>
 struct each_tuple<N,N>
